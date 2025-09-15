@@ -34,12 +34,20 @@ class EchoClient {
 			while (true) {
 				System.out.println("Veuillez saisir le message à envoyer au serveur : ");
 				messageToSend = sc.nextLine();
+
+				if (messageToSend.isEmpty()) {
+					System.out.println("Fin du client.");
+					break;
+				}
+
 				ps.println(messageToSend); // envoi du message au serveur
 				line = br.readLine(); // lecture réponse serveur
 				System.out.println("le serveur me repond : " + line); // affichage debug
-				//br.close();
-				ps.close();
 			}
+			br.close();
+			ps.close();
+			sock.close();
+			sc.close();
 		} catch (IOException e) {
 			System.out.println(e.getMessage());
 		}

@@ -1,7 +1,7 @@
 import java.io.*;
 import java.net.*;
 
-class EchoServer {
+class SommeServer {
 
 	public static void main(String[] args) {
 
@@ -40,10 +40,23 @@ class EchoServer {
 						break;
 					}
 
-					System.out.println("Le client me dit : " + line);
-					ps.println(line); // renvoi au client
-				}
+					System.out.println("Le client veut calculer : " + line + " nombres");
 
+					// Lire le nombre d'entiers à recevoir
+					try {
+						int nbrEntiers = Integer.parseInt(line);
+						int sum = 0;
+						// Lire les entiers envoyés par le client
+						for (int i = 0; i < nbrEntiers; i++) {
+							String entier = br.readLine();
+							sum += Integer.parseInt(entier);
+						}
+						ps.println(sum); // renvoi de la somme au client
+					} catch (NumberFormatException e) {
+						ps.println("REQ_ERR"); // envoyer un message d'erreur au client
+						continue; // passer à l'itération suivante de la boucle
+					}
+				}
 				System.out.println("Client déconnecté.");
 			} catch (IOException e) {
 				System.out.println(e.getMessage());
