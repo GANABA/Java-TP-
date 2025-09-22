@@ -14,7 +14,6 @@ public class PositionClient {
         Socket sock = null;
         int port = -1;
         Scanner sc = new Scanner(System.in);
-        String coordonneeToSend = null;
 
         if (args.length != 2) {
             System.out.println("usage: EchoClient ip_server port");
@@ -30,90 +29,94 @@ public class PositionClient {
         }
 
         try {
-            br = new BufferedReader(new InputStreamReader(sock.getInputStream())); // création flux lecture lignes de //                                                                              // texte
+            br = new BufferedReader(new InputStreamReader(sock.getInputStream())); // création flux lecture lignes // //                                                                           // // texte
             ps = new PrintStream(sock.getOutputStream()); // création flux écriture lignes de texte
 
+            // lire l’identifiant du client envoyé par le serveur
+            String clientId = br.readLine(); // lecture message serveur
+            if (clientId != null) {
+                System.out.println("Identifiant attribué par le serveur : " + clientId);
+            }
+
             while (true) {
-                System.out.println("Quel est le numero(1, 2 ou 3) de requete que vous souhaitez envoyer : ");
-                String numReq = sc.nextLine();
-                if (numReq.isEmpty()) {
+                System.out.println(
+                        "Quel est la requete que vous souhaitez effectuer :\n1-storepos x,y,z\n2-pathlen\n3-findpos facteur_proximite,x,y,z\n4-denivel\n5-lastpos\n");
+                String input = sc.nextLine();
+                if (input.isEmpty()) {
                     System.out.println("Fin du client.");
                     break;
                 }
-                if (!numReq.equals("1") && !numReq.equals("2") && !numReq.equals("3")) {
-                    System.out.println("Requête malformée - paramètres invalides !");
-                    continue;
-                }
-                int req = Integer.parseInt(numReq.trim());
 
-                // selon le numero de requete, demander les paramètres nécessaires
-                if (req == 1) {
-                    System.out.println("Veuillez saisir les coordonnées de la position à stocker par le serveur (x,y,z): ");
-                    coordonneeToSend = sc.nextLine();
+                // analayser de la commande de requete
+                String[] parts = input.split(" ", 2);
+                String command = parts[0].toLowerCase();
 
-                    if (coordonneeToSend.isEmpty()) {
-                        System.out.println("Fin du client.");
-                        break;
-                    }
-                    // valider la requête
-                    String[] coords = coordonneeToSend.split(",");
-                    if (coords.length != 3) {
+                if (command.equals("storepos")) {
+                    if (parts.length < 2) {
                         System.out.println("Requête malformée - paramètres invalides !");
                         continue;
                     }
-                    Double[] nums = new Double[coords.length];
+                    String[] coords = parts[1].split(",");
+                    if (coords.length != 3) {
+                        System.out.println("Requête malformée - paramètres invalides (3 parametres attendus)!");
+                        continue;
+                    }
                     boolean validRequest = true;
-                    for (int i = 0; i < coords.length; i++) {
+                    for (String coord : coords) {
                         try {
-                            nums[i] = Double.parseDouble(coords[i].trim());
+                            Double.parseDouble(coord.trim());
                         } catch (NumberFormatException e) {
                             validRequest = false;
                             break;
                         }
                     }
-
                     if (!validRequest) {
-                        System.out.println("Requête malformée !");
+                        System.out.println("Requête malformée - paramètres invalides !");
                         continue;
                     }
-
-                    ps.println(req); // envoyer au serveur le numero de requete
-
-                    for (Double num : nums) {
-                        ps.println(num); // envoyer au serveur chaque coordonnée
+                    // envoi de la requête au serveur
+                    ps.println("1");
+                    ps.println(clientId);
+                    for (String coord : coords) {
+                        ps.println(coord.trim());
                     }
                     line = br.readLine(); // lecture réponse serveur
-
                     if (line.equals("OK")) {
                         System.out.println("Requête exécuté, position enregistrée !");
-                    }
-                    else if (line.equals("REQ_ERR")) {
+                    } else if (line.equals("REQ_ERR")) {
                         System.out.println("Requête malformée - paramètres invalides !");
                     }
-                } else if (req == 2) { // calcul longueur chemin
-                    ps.println(req); // envoyer au serveur le numero de requete
+
+                } else if (command.equals("pathlen")) {
+                    if (parts.length != 0) {
+                        System.out.println("Requête malformée - paramètres invalides (Aucun autre parametre attendu)!");
+                        continue;
+                    }
+                    // envoi de la requête au serveur
+                    ps.println("2");
+                    ps.println(clientId);
                     line = br.readLine(); // lecture réponse serveur
-                    if(line != null){
-                        System.out.println("La longueur du chemin est de : " + line);
+                    try {
+                        double pathLength = Double.parseDouble(line);
+                        System.out.println("Longueur du chemin : " + pathLength);
+                    } catch (NumberFormatException e) {
+                        System.out.println("Réponse du serveur invalide !");
                     }
-                } else if (req == 3) { // position proche d'une position stockée
-                    ps.println(req); // envoyer au serveur le numero de requete
-                    System.out.println("Veuillez saisir le facteur de proximité et les coordonnées de la position à vérifier par le serveur (eps,x,y,z): ");
-                    coordonneeToSend = sc.nextLine();
-                    if (coordonneeToSend.isEmpty()) {
-                        System.out.println("Fin du client.");
-                        break;
-                    }
-                    String[] params = coordonneeToSend.split(",");
-                    if (params.length != 4) {
+
+                } else if (command.equals("findpos")) {
+                    if (parts.length < 2) {
                         System.out.println("Requête malformée - paramètres invalides !");
                         continue;
                     }
+                    String[] values = parts[1].split(",");
+                    if (values.length != 4) {
+                        System.out.println("Requête malformée - paramètres invalides (4 parametres attendus)!");
+                        continue;
+                    }
                     boolean validRequest = true;
-                    Double[] nums = new Double[params.length];
-                    for (int i=0; i < params.length; i++) {
+                    for (String value : values) {
                         try {
-                            nums[i] = Double.parseDouble(params[i].trim());
+                            Double.parseDouble(value.trim());
                         } catch (NumberFormatException e) {
                             validRequest = false;
                             break;
@@ -123,20 +126,33 @@ public class PositionClient {
                         System.out.println("Requête malformée - paramètres invalides !");
                         continue;
                     }
-                    for (Double num : nums) {
-                        ps.println(num); // envoyer au serveur chaque coordonnée
+                    // envoi de la requête au serveur
+                    ps.println("3");
+                    ps.println(clientId);
+                    for (String value : values) {
+                        ps.println(value.trim());
                     }
                     line = br.readLine(); // lecture réponse serveur
-                    if(line.equals("TRUE")){
-                        System.out.println("La position correspond/est proche d'une position déjà stockée !"); 
-                    }
-                    else if(line.equals("FALSE")){
-                        System.out.println("La position n'est pas proche/ne correspond pas à une position stockée !");
-                    }
-                    else if(line.equals("ERR_REQ")){
+                    if (line.equals("TRUE")) {
+                        System.out.println("La position est déjà stockée !");
+                    } else if (line.equals("FALSE")) {
+                        System.out.println("La position n'est pas stockée !");
+                    } else if (line.equals("REQ_ERR")) {
                         System.out.println("Requête malformée - paramètres invalides !");
                     }
-                }else {
+                } else if (command.equals("denivel")) {
+                    ps.println("4");
+                    ps.println(clientId);
+                    String resp = br.readLine();
+                    System.out.println("Dénivelé positif,négatif = " + resp);
+                } else if (command.equals("lastpos")) {
+                    ps.println("5");
+                    ps.println(clientId);
+                    String resp = br.readLine();
+                    System.out.println("Dernières positions des autres clients : " + resp);
+                }
+
+                else {
                     System.out.println("Requête malformée - paramètres invalides !");
                 }
 
