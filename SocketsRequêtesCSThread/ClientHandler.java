@@ -5,7 +5,7 @@ import java.io.PrintStream;
 import java.net.Socket;
 import java.util.ArrayList;
 
-class ClientHandler implements Runnable {
+class ClientHandler extends Thread {
     private Socket sock;
     private int clientId;
 

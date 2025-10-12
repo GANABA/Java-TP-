@@ -88,7 +88,7 @@ public class PositionClient {
                     }
 
                 } else if (command.equals("pathlen")) {
-                    if (parts.length != 0) {
+                    if (parts.length != 1) {
                         System.out.println("Requête malformée - paramètres invalides (Aucun autre parametre attendu)!");
                         continue;
                     }
